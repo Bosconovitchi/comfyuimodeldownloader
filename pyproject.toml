@@ -1,0 +1,18 @@
+[project]
+name = "comfyui-model-downloader"
+version = "1.0.0"
+description = "One-click high-speed missing-model downloader for ComfyUI templates/workflows (aria2c multi-thread + mirror + integrity verification)."
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Bosconovitchi" }]
+keywords = ["comfyui", "custom-node", "model-downloader", "aria2"]
+classifiers = [
+    "Framework :: ComfyUI",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[tool.comfy]
+PublisherId = "bosconovitchi"
+DisplayName = "ComfyUI-Model-Downloader"
+Icon = ""
