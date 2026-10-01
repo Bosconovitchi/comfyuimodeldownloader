@@ -6,3 +6,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+verify_cache.json
+verify_cache.json.tmp

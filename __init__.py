@@ -218,6 +218,35 @@ _EXPECTED_CACHE = {}   # url -> {"size": int|None, "sha256": str|None}
 _VERIFIED = {}         # path -> (mtime_ns, size, ok)
 _REASON_OK = {"missing", "incomplete", "size", "hash"}
 HF_TOKEN = os.environ.get("HF_TOKEN") or None
+HASH_SKIP_LIMIT = 2 * 1024**3   # 检查时超过 2GB 的文件跳过全量哈希 (下载完成时已校验过)
+_CACHE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "verify_cache.json")
+
+
+def _load_cache():
+    try:
+        with open(_CACHE_PATH, encoding="utf-8") as f:
+            raw = json.load(f)
+        for k, v in (raw.get("verified") or {}).items():
+            if isinstance(v, list) and len(v) == 3:
+                _VERIFIED[k] = (int(v[0]), int(v[1]), bool(v[2]))
+        for k, v in (raw.get("expected") or {}).items():
+            if isinstance(v, dict):
+                _EXPECTED_CACHE[k] = v
+    except Exception:
+        pass
+
+
+def _save_cache():
+    try:
+        tmp = _CACHE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"verified": _VERIFIED, "expected": _EXPECTED_CACHE}, f)
+        os.replace(tmp, _CACHE_PATH)
+    except Exception:
+        pass
+
+
+_load_cache()
 
 
 def _parse_hf(url):
@@ -281,6 +310,8 @@ def _gated_error_sync(url):
 def _expected(url):
     if url not in _EXPECTED_CACHE:
         _EXPECTED_CACHE[url] = _fetch_expected_sync(url)
+        if _EXPECTED_CACHE[url]:
+            _save_cache()
     return _EXPECTED_CACHE[url]
 
 
@@ -317,8 +348,12 @@ def _check_integrity(path, expected):
             cache = _VERIFIED.get(path)
             if cache and cache[0] == st.st_mtime_ns and cache[1] == size:
                 return cache[2], ""
+            if size > HASH_SKIP_LIMIT:
+                # 超大文件: 检查时跳过全量哈希 (下载完成时已做 SHA256 校验), 只验大小
+                return True, ""
             ok = _file_sha256(path) == exp_hash
             _VERIFIED[path] = (st.st_mtime_ns, size, ok)
+            _save_cache()
             if not ok:
                 return False, "hash"
         except OSError:
