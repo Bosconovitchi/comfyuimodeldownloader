@@ -109,6 +109,17 @@ Với mỗi mô hình, plugin kiểm tra (theo thứ tự):
 
 Kích thước/hàm băm kỳ vọng lấy từ `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` và được lưu đệm theo URL. Các URL không phải Hugging Face (ví dụ Civitai) chỉ kiểm tra sự tồn tại + `.aria2` + kích thước.
 
+## Kho lưu trữ bị kiểm soát (mô hình yêu cầu giấy phép)
+
+Một số mô hình (ví dụ LTX-2.5, Gemma) bị **kiểm soát truy cập (gated)** trên Hugging Face — bạn phải chấp nhận giấy phép / yêu cầu quyền truy cập trước khi tải xuống. Plugin phát hiện điều này và báo lỗi bằng một thông báo rõ ràng thay vì lỗi khó hiểu.
+
+1. Mở trang mô hình trên huggingface.co (ví dụ https://huggingface.co/Lightricks/LTX-2.5), đăng nhập, rồi chấp nhận điều khoản / yêu cầu quyền truy cập.
+2. Tạo access token chỉ đọc: https://huggingface.co/settings/tokens → New token → loại **Read**.
+3. Đặt nó làm biến môi trường cho ComfyUI rồi khởi động lại:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (thêm vào script khởi động ComfyUI)
+4. Khởi động lại ComfyUI và thử lại — các lượt tải khi đó sẽ kèm `Authorization: Bearer <token>`, và metadata toàn vẹn (kích thước/SHA256) cũng được tải về cùng token.
+
 ## Cấu hình
 
 Mọi giá trị có thể chỉnh đều là hằng số ở đầu `__init__.py`:

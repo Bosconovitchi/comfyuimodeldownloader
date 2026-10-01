@@ -217,6 +217,7 @@ def _find_item(name, directory):
 _EXPECTED_CACHE = {}   # url -> {"size": int|None, "sha256": str|None}
 _VERIFIED = {}         # path -> (mtime_ns, size, ok)
 _REASON_OK = {"missing", "incomplete", "size", "hash"}
+HF_TOKEN = os.environ.get("HF_TOKEN") or None
 
 
 def _parse_hf(url):
@@ -237,7 +238,15 @@ def _fetch_expected_sync(url):
     owner, repo, rev, path = hf
     try:
         api = f"https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true"
-        r = requests.get(api, timeout=20)
+        headers = {}
+        if HF_TOKEN:
+            headers["Authorization"] = f"Bearer {HF_TOKEN}"
+        r = requests.get(api, timeout=20, headers=headers)
+        if r.status_code in (401, 403):
+            code = r.headers.get("X-Error-Code") or ""
+            msg = r.headers.get("X-Error-Message") or ""
+            if code == "GatedRepo":
+                return {"gated": True, "error": msg}
         r.raise_for_status()
         for entry in r.json():
             if entry.get("type") == "file" and entry.get("path") == path:
@@ -249,6 +258,24 @@ def _fetch_expected_sync(url):
     except Exception as e:
         LOGGER.warning("[BFP] 获取预期元数据失败 %s: %s", url, e)
     return {}
+
+
+def _gated_error_sync(url):
+    """探测 403 是否因受限仓库(Gated)引起, 返回用户可读原因或 None."""
+    try:
+        headers = {}
+        if HF_TOKEN:
+            headers["Authorization"] = f"Bearer {HF_TOKEN}"
+        r = requests.head(url, timeout=15, headers=headers, allow_redirects=False)
+        if r.status_code in (401, 403):
+            code = r.headers.get("X-Error-Code") or ""
+            if code == "GatedRepo":
+                return ("受限仓库 (Gated): 该模型需先在 huggingface.co 上接受许可/申请访问, "
+                        "并设置 HF_TOKEN 环境变量后重启 ComfyUI")
+            return f"HTTP {r.status_code} (X-Error-Code: {code or '未知'})"
+    except Exception:
+        pass
+    return None
 
 
 def _expected(url):
@@ -349,14 +376,33 @@ async def _download_one(aria, it, root_override=None):
         pass
 
     url = _mirror(it["url"])
-    proc = await asyncio.create_subprocess_exec(
+    exp = await asyncio.to_thread(_expected, url)
+    if exp.get("gated") and not HF_TOKEN:
+        it["status"] = "error"
+        it["error"] = "受限仓库 (Gated): 需在 huggingface.co 申请访问并设置 HF_TOKEN 后重启 ComfyUI"
+        return
+    if not HF_TOKEN:
+        pre = await asyncio.to_thread(_gated_error_sync, url)
+        if pre and "Gated" in pre:
+            # 下载前快速探测: 受限仓库直接失败, 给出明确指引
+            it["status"] = "error"
+            it["error"] = pre
+            return
+    args = [
         aria, "-x16", "-s16", "-k1M",
         "--file-allocation=none",
         "--auto-file-renaming=false",
         "--allow-overwrite=false",
         # 生命周期绑定: ComfyUI 进程退出时 aria2 自动停止
         f"--stop-with-process={os.getpid()}",
-        "-d", root, "-o", it["name"], url,
+        "--max-tries=5", "--retry-wait=5",
+        "--connect-timeout=30", "--timeout=60",
+    ]
+    if HF_TOKEN:
+        args.append(f"--header=Authorization: Bearer {HF_TOKEN}")
+    args += ["-d", root, "-o", it["name"], url]
+    proc = await asyncio.create_subprocess_exec(
+        *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
@@ -397,7 +443,8 @@ async def _download_one(aria, it, root_override=None):
             it["progress"] = 100
         else:
             it["status"] = "error"
-            it["error"] = f"aria2 退出码 {rc}"
+            reason = await asyncio.to_thread(_gated_error_sync, url)
+            it["error"] = reason or f"aria2 退出码 {rc}"
     except OSError:
         it["status"] = "error"
         it["error"] = "下载完成但文件校验失败"

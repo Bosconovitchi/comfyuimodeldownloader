@@ -109,6 +109,17 @@ git clone https://github.com/Bosconovitchi/comfyuimodeldownloader.git ComfyUI-Mo
 
 अपेक्षित आकार/हैश `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` से आते हैं और प्रति URL कैश होते हैं। गैर-Hugging-Face URL (जैसे Civitai) केवल अस्तित्व + `.aria2` + आकार जाँच पर आते हैं।
 
+## प्रतिबंधित रिपॉज़िटरी (लाइसेंस-आवश्यक मॉडल)
+
+कुछ मॉडल (जैसे LTX-2.5, Gemma) Hugging Face पर **gated** (प्रतिबंधित) हैं — डाउनलोड करने से पहले आपको लाइसेंस स्वीकार करना / एक्सेस का अनुरोध करना होगा। प्लगइन इसे पहचान लेता है और रहस्यमय त्रुटि के बजाय स्पष्ट संदेश के साथ विफल होता है।
+
+1. huggingface.co पर मॉडल पेज खोलें (जैसे https://huggingface.co/Lightricks/LTX-2.5), साइन इन करें, और शर्तें स्वीकार करें / एक्सेस का अनुरोध करें।
+2. एक रीड-ओनली एक्सेस टोकन बनाएँ: https://huggingface.co/settings/tokens → New token → प्रकार **Read**।
+3. इसे ComfyUI के लिए एनवायरनमेंट वेरिएबल के रूप में सेट करें और पुनः आरंभ करें:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (अपनी ComfyUI स्टार्ट स्क्रिप्ट में जोड़ें)
+4. ComfyUI पुनः आरंभ करें और दोबारा कोशिश करें — अब डाउनलोड `Authorization: Bearer <token>` साथ ले जाते हैं, और अखंडता मेटाडेटा (आकार/SHA256) भी टोकन के साथ ही प्राप्त किया जाता है।
+
 ## कॉन्फ़िगरेशन
 
 सभी समायोज्य `__init__.py` के शीर्ष पर स्थिरांक हैं:

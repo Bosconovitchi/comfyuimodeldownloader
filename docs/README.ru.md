@@ -109,6 +109,17 @@ git clone https://github.com/Bosconovitchi/comfyuimodeldownloader.git ComfyUI-Mo
 
 Ожидаемые размеры/хэши берутся из `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` и кэшируются по URL. URL, не относящиеся к Hugging Face (например, Civitai), проверяются только по существованию + `.aria2` + размеру.
 
+## Закрытые репозитории (модели, требующие лицензии)
+
+Некоторые модели (например, LTX-2.5, Gemma) **закрыты** (gated) на Hugging Face — перед загрузкой необходимо принять лицензию / запросить доступ. Плагин это определяет и завершает работу с понятным сообщением вместо загадочной ошибки.
+
+1. Откройте страницу модели на huggingface.co (например, https://huggingface.co/Lightricks/LTX-2.5), войдите в аккаунт и примите условия / запросите доступ.
+2. Создайте токен доступа только для чтения: https://huggingface.co/settings/tokens → New token → тип **Read**.
+3. Задайте его как переменную окружения для ComfyUI и перезапустите:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (добавьте в скрипт запуска ComfyUI)
+4. Перезапустите ComfyUI и повторите попытку — загрузки будут передавать заголовок `Authorization: Bearer <token>`, а метаданные целостности (размер/SHA256) тоже запрашиваются с этим токеном.
+
 ## Конфигурация
 
 Все настраиваемые параметры — это константы в начале `__init__.py`:

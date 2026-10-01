@@ -109,6 +109,19 @@ git clone https://github.com/Bosconovitchi/comfyuimodeldownloader.git ComfyUI-Mo
 
 预期大小/哈希来自 `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true`，按 URL 缓存。非 Hugging Face 链接（如 Civitai）只做存在性 + `.aria2` + 大小检查。
 
+## 受限仓库 (Gated, 需许可的模型)
+
+部分模型（如 LTX-2.5、Gemma）在 Hugging Face 上是**受限仓库**——必须先接受许可/申请访问才能下载。插件会自动识别这类情况并给出明确提示，而不是晦涩的报错。
+
+1. 打开模型主页（如 <https://huggingface.co/Lightricks/LTX-2.5>），登录并接受条款/申请访问。
+2. 创建只读访问令牌：<https://huggingface.co/settings/tokens> → New token → 类型选 **Read**。
+3. 设为 ComfyUI 的环境变量并重启：
+
+   - Windows（PowerShell）：`setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS：`export HF_TOKEN=hf_xxxxxxxx`（加入 ComfyUI 启动脚本）
+
+4. 重启 ComfyUI 后重试——下载会携带 `Authorization: Bearer <token>`，完整性元数据（大小/SHA256）也会带 token 获取。
+
 ## 配置
 
 所有可调项都在 `__init__.py` 顶部的常量里：

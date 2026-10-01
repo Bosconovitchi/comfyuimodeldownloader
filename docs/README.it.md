@@ -109,6 +109,17 @@ Per ogni modello il plugin controlla (in ordine):
 
 Dimensioni/hash attesi provengono da `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` e sono memorizzati nella cache per URL. Gli URL non di Hugging Face (es. Civitai) ripiegano su soli controlli di esistenza + `.aria2` + dimensione.
 
+## Repository con accesso limitato (modelli soggetti a licenza)
+
+Alcuni modelli (es. LTX-2.5, Gemma) sono **protetti** (gated) su Hugging Face — devi accettare la licenza / richiedere l'accesso prima di poterli scaricare. Il plugin lo rileva e fallisce con un messaggio chiaro invece di un errore criptico.
+
+1. Apri la pagina del modello su huggingface.co (es. https://huggingface.co/Lightricks/LTX-2.5), accedi e accetta i termini / richiedi l'accesso.
+2. Crea un token di accesso in sola lettura: https://huggingface.co/settings/tokens → New token → tipo **Read**.
+3. Impostalo come variabile d'ambiente per ComfyUI e riavvia:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (aggiungilo allo script di avvio di ComfyUI)
+4. Riavvia ComfyUI e riprova — i download includono quindi `Authorization: Bearer <token>` e anche i metadati di integrità (dimensione/SHA256) vengono recuperati con il token.
+
 ## Configurazione
 
 Tutti i parametri regolabili sono costanti all'inizio di `__init__.py`:

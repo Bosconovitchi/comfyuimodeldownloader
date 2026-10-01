@@ -109,6 +109,17 @@ Dla każdego modelu wtyczka sprawdza (po kolei):
 
 Oczekiwane rozmiary/hasze pochodzą z `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` i są cache'owane per URL. Adresy spoza Hugging Face (np. Civitai) są sprawdzane tylko pod kątem istnienia + `.aria2` + rozmiaru.
 
+## Repozytoria z ograniczonym dostępem (modele wymagające licencji)
+
+Niektóre modele (np. LTX-2.5, Gemma) są **ograniczone** (gated) na Hugging Face — przed pobraniem musisz zaakceptować licencję / poprosić o dostęp. Wtyczka to wykrywa i kończy działanie z czytelnym komunikatem zamiast zagadkowego błędu.
+
+1. Otwórz stronę modelu na huggingface.co (np. https://huggingface.co/Lightricks/LTX-2.5), zaloguj się i zaakceptuj warunki / poproś o dostęp.
+2. Utwórz token dostępu tylko do odczytu: https://huggingface.co/settings/tokens → New token → typ **Read**.
+3. Ustaw go jako zmienną środowiskową dla ComfyUI i uruchom ponownie:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (dodaj do skryptu startowego ComfyUI)
+4. Uruchom ponownie ComfyUI i spróbuj jeszcze raz — pobierania będą wtedy wysyłać nagłówek `Authorization: Bearer <token>`, a metadane integralności (rozmiar/SHA256) również są pobierane z tym tokenem.
+
 ## Konfiguracja
 
 Wszystkie parametry do dostrojenia to stałe na początku pliku `__init__.py`:

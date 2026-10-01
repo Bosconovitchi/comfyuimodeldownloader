@@ -109,6 +109,17 @@ Eklenti her model için (sırayla) şunları kontrol eder:
 
 Beklenen boyutlar/hash'ler `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` adresinden gelir ve URL başına önbelleğe alınır. Hugging Face dışı URL'ler (örn. Civitai) yalnızca varlık + `.aria2` + boyut kontrollerine düşer.
 
+## Korumalı depolar (lisans gerektiren modeller)
+
+Bazı modeller (örn. LTX-2.5, Gemma) Hugging Face'te **korumalı** (gated) durumdadır — indirmeden önce lisansı kabul etmeniz / erişim talep etmeniz gerekir. Eklenti bunu algılar ve anlaşılmaz bir hata yerine açık bir mesajla başarısız olur.
+
+1. huggingface.co üzerindeki model sayfasını açın (örn. https://huggingface.co/Lightricks/LTX-2.5), oturum açın ve koşulları kabul edin / erişim talep edin.
+2. Salt okunur bir erişim anahtarı (token) oluşturun: https://huggingface.co/settings/tokens → New token → türü **Read**.
+3. Bunu ComfyUI için bir ortam değişkeni olarak ayarlayın ve yeniden başlatın:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (ComfyUI başlangıç betiğine ekleyin)
+4. ComfyUI'ı yeniden başlatın ve tekrar deneyin — indirmeler artık `Authorization: Bearer <token>` başlığını taşır ve bütünlük meta verileri (boyut/SHA256) de bu token ile alınır.
+
 ## Yapılandırma
 
 Tüm ayarlanabilir değerler `__init__.py` dosyasının başındaki sabitlerdir:

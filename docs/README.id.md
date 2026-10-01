@@ -109,6 +109,17 @@ Untuk setiap model, plugin memeriksa (secara berurutan):
 
 Ukuran/hash yang diharapkan berasal dari `https://hf-mirror.com/api/models/{owner}/{repo}/tree/{rev}?recursive=true` dan di-cache per URL. URL non-Hugging-Face (mis. Civitai) hanya mengandalkan pemeriksaan keberadaan + `.aria2` + ukuran.
 
+## Repositori terkunci (model yang memerlukan lisensi)
+
+Beberapa model (mis. LTX-2.5, Gemma) **dikunci** (gated) di Hugging Face — Anda harus menerima lisensi / meminta akses sebelum mengunduh. Plugin mendeteksi hal ini dan gagal dengan pesan yang jelas alih-alih kesalahan yang samar.
+
+1. Buka halaman model di huggingface.co (mis. https://huggingface.co/Lightricks/LTX-2.5), masuk, dan terima ketentuannya / minta akses.
+2. Buat token akses baca-saja: https://huggingface.co/settings/tokens → New token → jenis **Read**.
+3. Atur sebagai variabel lingkungan untuk ComfyUI dan mulai ulang:
+   - Windows (PowerShell): `setx HF_TOKEN hf_xxxxxxxx`
+   - Linux/macOS: `export HF_TOKEN=hf_xxxxxxxx` (tambahkan ke skrip start ComfyUI Anda)
+4. Mulai ulang ComfyUI dan coba lagi — unduhan kini membawa `Authorization: Bearer <token>`, dan metadata integritas (ukuran/SHA256) juga diambil dengan token tersebut.
+
 ## Konfigurasi
 
 Semua pengaturan adalah konstanta di bagian atas `__init__.py`:
